@@ -1,0 +1,23 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "Build C file with cleaned folder name",
+      "command": "bash",
+      "args": [
+        "-c",
+        "gcc -fdiagnostics-color=always -Wall -g -O0 '${file}' -o '${fileDirname}/$(basename \"${fileDirname}\" | sed -E 's/^[0-9]+-//')'"
+      ],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "problemMatcher": ["$gcc"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "detail": "Builds main.c and outputs binary using cleaned folder name"
+    }
+  ]
+}
