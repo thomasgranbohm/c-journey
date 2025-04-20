@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "stdint.h": "c",
+        "ui.h": "c",
+        "types.h": "c",
+        "game.h": "c"
+    }
+}
