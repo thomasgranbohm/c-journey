@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PAGE_SIZE 512
-
+#define PAGE_SIZE 2048
 typedef struct
 {
     char *content;
@@ -51,8 +50,12 @@ FileInfo init_file(char *filename)
     long filesize = get_file_size(file);
     char *content = malloc(sizeof(char) * PAGE_SIZE);
 
-    Page page = {content, -1, 0};
-    FileInfo fileinfo = {filename, filesize, file, &page};
+    Page *page = malloc(sizeof(Page));
+    page->content = content;
+    page->index = 0;
+    page->size = -1;
+
+    FileInfo fileinfo = {filename, filesize, file, page};
 
     return fileinfo;
 }
@@ -61,9 +64,9 @@ void load_page(FileInfo *fileinfo, int index)
 {
     long where_to = index * PAGE_SIZE;
 
-    if (where_to >= fileinfo->filesize || fseek(fileinfo->file, 0, where_to) != 0)
+    if (where_to >= fileinfo->filesize || fseek(fileinfo->file, where_to, SEEK_SET) != 0)
     {
-        fprintf(stderr, "Something went wrong trying to change to page %ld.\n", where_to);
+        fprintf(stderr, "Something went wrong trying to change to page %d.\n", index);
         exit(EXIT_FAILURE);
     }
 
@@ -72,19 +75,17 @@ void load_page(FileInfo *fileinfo, int index)
     while ((c = fgetc(fileinfo->file)) && c != EOF && i < PAGE_SIZE)
     {
         fileinfo->page->content[i++] = c;
-        // i++;
     }
 
-    (*(*fileinfo).page).size = i < PAGE_SIZE ? i : PAGE_SIZE;
+    fileinfo->page->size = i < PAGE_SIZE ? i : PAGE_SIZE;
+    fileinfo->page->index = index;
 }
 
 void print_page(FileInfo fileinfo)
 {
-    printf("--- Start of %d of %s ---\n", fileinfo.page->size, fileinfo.filename);
-    printf("%d\n", fileinfo.page->size);
+    printf("--- Start of page %d of %s ---\n", fileinfo.page->index, fileinfo.filename);
     for (int i = 0; i < fileinfo.page->size; i++)
     {
-        printf("\n%d %d\n", i, fileinfo.page->size);
         putc(*(fileinfo.page->content + i), stdout);
     }
 
@@ -114,6 +115,10 @@ int main(int argc, char *argv[])
     load_page(&fileinfo, 0);
 
     print_page(fileinfo);
+
+    fclose(fileinfo.file);
+    free(fileinfo.page->content);
+    free(fileinfo.page);
 
     return 0;
 }
