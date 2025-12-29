@@ -1,6 +1,7 @@
 # Ideas
 
-I started with ChatGPT generating me ideas to learn different topics and get started, but I've since filled in with ideas of my own at the bottom.
+I started with ChatGPT generating me ideas to learn different topics and get started, but I've since filled in with ideas of my own at the bottom.  
+My end goal is learning about C and low-level programming. I also want to explore the security angle of low-level programming. A fun last project is making a small GameBoy emulator.  
 
 ## ChatGPT generated ideas
 
@@ -62,10 +63,15 @@ Would you like a detailed guide or sample code for any of these?
 
  - Game of Life (SDL)
  - Perlin noise generation
- - Simple HTTP Server
+ - Simple HTTP Server (using threads)
  - Socket server
  - Neural network
  - Sudoku (with predefined puzzles)
  - terminal snake
  - Terminal image dithering
  - Hashmap implementation
+ - Fractal visualiser (mandelbrot)
+ - JSON / msgpack parser
+ - Boids
+ - Physics visualizer (only classic mechanics tho)
+ - Minesweeper

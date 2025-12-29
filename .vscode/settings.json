@@ -3,6 +3,10 @@
         "stdint.h": "c",
         "ui.h": "c",
         "types.h": "c",
-        "game.h": "c"
+        "game.h": "c",
+        "string.h": "c",
+        "math.h": "c",
+        "stdio.h": "c",
+        "stdlib.h": "c"
     }
 }
