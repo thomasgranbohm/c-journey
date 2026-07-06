@@ -21,9 +21,11 @@ int main(void)
     enable_raw_mode();
     init_terminal();
 
+    // Game loop kinda
     while (1)
     {
         refresh_screen();
         process_key();
+        check_win();
     }
 }

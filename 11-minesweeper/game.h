@@ -14,6 +14,7 @@ typedef struct
 {
     int size;
     int n_mines;
+    int n_visited;
     char *map;
     char *visited;
     char *dist;
@@ -23,5 +24,6 @@ void reveal_tile(int x, int y);
 void place_flag(int x, int y);
 void setup_board();
 void setup_mines();
+void check_win();
 
 #endif

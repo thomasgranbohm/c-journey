@@ -57,8 +57,11 @@ void die(const char *s)
 
 void disable_raw_mode()
 {
-    write(STDOUT_FILENO, "\x1b[2J", 4);
-    write(STDOUT_FILENO, "\x1b[H", 3);
+    // write(STDOUT_FILENO, "\x1b[2J", 4);
+
+    char buf[32];
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.rows + 1, 0);
+    write(STDOUT_FILENO, buf, strlen(buf));
 
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig) == -1)
         die("tcsetattr");
@@ -140,7 +143,7 @@ void draw_map(struct wbuf *wb)
             switch (board->visited[offset])
             {
             case FLAG:
-                c = '!';
+                c = 'F';
                 break;
             case UNVISITED:
                 c = '#';
@@ -163,7 +166,6 @@ void draw_map(struct wbuf *wb)
             }
             wAppend(wb, &c, 1);
         }
-        // wAppend(wb, "\x1b[H", 2);
     }
 }
 
@@ -174,10 +176,9 @@ void refresh_screen()
     wAppend(&wb, "\x1b[H", 3);
 
     draw_map(&wb);
-
     char buf[32];
-    // snprintf(buf, sizeof(buf), "%d:%d", E.cx + 1, E.cy + 1);
-    // wAppend(&wb, buf, strlen(buf));
+    snprintf(buf, sizeof(buf), "\r\nMissing %d tiles (%d)", board->n_visited, board->size * board->size - board->n_mines);
+    wAppend(&wb, buf, strlen(buf));
 
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.ay + E.cy, E.ax + E.cx);
     wAppend(&wb, buf, strlen(buf));

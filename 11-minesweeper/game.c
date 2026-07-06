@@ -121,8 +121,21 @@ void reveal_tile(int x, int y)
 
     board->visited[curr] = VISITED;
 
-    if (board->map[curr] != PLAIN || board->dist[curr] != 0)
+    if (board->map[curr] == MINE)
+    {
+        write(STDOUT_FILENO, "You lose!\r\n", 11);
+        exit(0);
         return;
+    }
+    if (board->map[curr] != PLAIN)
+    {
+        return;
+    }
+    else if (board->dist[curr] != 0)
+    {
+        board->n_visited++;
+        return;
+    }
 
     Stack s = init_stack();
     push(&s, curr);
@@ -132,6 +145,8 @@ void reveal_tile(int x, int y)
         curr = pop(&s);
         x = curr % board->size;
         y = curr / board->size;
+
+        board->n_visited++;
 
         int pos;
         for (int cy = y - 1; cy <= y + 1; cy++)
@@ -154,6 +169,8 @@ void reveal_tile(int x, int y)
 
                 if (board->dist[pos] == 0)
                     push(&s, pos);
+                else
+                    board->n_visited++;
             }
         }
     }
@@ -166,8 +183,20 @@ void place_flag(int x, int y)
     int offset = POINTER_OFFSET(x, y, board->size);
     int output = FLAG;
 
+    if (board->visited[offset] == VISITED)
+        return;
+
     if (board->visited[offset] == FLAG)
         output = UNVISITED;
 
     board->visited[offset] = output;
+}
+
+void check_win()
+{
+    if (board->n_visited == board->size * board->size - board->n_mines)
+    {
+        write(STDOUT_FILENO, "You win!\r\n", 10);
+        exit(0);
+    }
 }
