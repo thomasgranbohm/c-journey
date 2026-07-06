@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "game.h"
+#include "stack.h"
 
 #define MIN_BOARD_SIZE 4
 #define MAX_BOARD_SIZE 32
@@ -18,15 +19,15 @@ extern Board *board;
 void setup_board()
 {
     char buffer[64];
-    int size = 10;
+    int size = 32;
 
-    // do
-    // {
-    //     printf("Please input board size: ");
-    //     fflush(stdout);
-    //     fgets(buffer, sizeof(buffer), stdin);
-    //     size = atoi(buffer);
-    // } while (size < MIN_BOARD_SIZE || size > MAX_BOARD_SIZE);
+    do
+    {
+        printf("Please input board size: ");
+        fflush(stdout);
+        fgets(buffer, sizeof(buffer), stdin);
+        size = atoi(buffer);
+    } while (size < MIN_BOARD_SIZE || size > MAX_BOARD_SIZE);
 
     char *map_pointer = malloc(size * size * sizeof(char));
     char *visited_pointer = malloc(size * size * sizeof(char));
@@ -52,16 +53,16 @@ void setup_board()
 void setup_mines()
 {
     char buffer[64];
-    int n_mines = 10;
+    int n_mines = 99;
     int size = board->size;
 
-    // do
-    // {
-    //     printf("Please input number of mines: ");
-    //     fflush(stdout);
-    //     fgets(buffer, sizeof(buffer), stdin);
-    //     n_mines = atoi(buffer);
-    // } while (n_mines < 1 || n_mines > size);
+    do
+    {
+        printf("Please input number of mines: ");
+        fflush(stdout);
+        fgets(buffer, sizeof(buffer), stdin);
+        n_mines = atoi(buffer);
+    } while (n_mines < 1 || n_mines > size);
 
     board->n_mines = n_mines;
 
@@ -114,9 +115,59 @@ void setup_mines()
     free(mines);
 }
 
-void reveal_tile(int y, int x)
+void reveal_tile(int x, int y)
 {
-    int offset = x + y * board->size;
+    int curr = POINTER_OFFSET(x, y, board->size);
 
-    board->visited[offset] = VISITED;
+    board->visited[curr] = VISITED;
+
+    if (board->map[curr] != PLAIN || board->dist[curr] != 0)
+        return;
+
+    Stack s = init_stack();
+    push(&s, curr);
+
+    while (s.top != 0)
+    {
+        curr = pop(&s);
+        x = curr % board->size;
+        y = curr / board->size;
+
+        int pos;
+        for (int cy = y - 1; cy <= y + 1; cy++)
+        {
+            if (cy < 0 || cy >= board->size)
+                continue;
+            for (int cx = x - 1; cx <= x + 1; cx++)
+            {
+                if (cx < 0 || cx >= board->size)
+                    continue;
+
+                pos = POINTER_OFFSET(cx, cy, board->size);
+
+                if (pos == curr)
+                    continue;
+                if (board->visited[pos] == VISITED)
+                    continue;
+
+                board->visited[pos] = VISITED;
+
+                if (board->dist[pos] == 0)
+                    push(&s, pos);
+            }
+        }
+    }
+
+    free_stack(&s);
+}
+
+void place_flag(int x, int y)
+{
+    int offset = POINTER_OFFSET(x, y, board->size);
+    int output = FLAG;
+
+    if (board->visited[offset] == FLAG)
+        output = UNVISITED;
+
+    board->visited[offset] = output;
 }

@@ -5,6 +5,7 @@
 
 #include "game.h"
 #include "reader.h"
+#include "stack.h"
 
 Board *board;
 

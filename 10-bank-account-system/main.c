@@ -96,9 +96,9 @@ void create_account(Bank *bank)
     } while (find_account_index(bank, account.id) != -1);
 
     printf("Enter account holder's name: ");
-    fgets(buffer, sizeof(buffer), stdin);
-    strncpy(account.holder_name, buffer, sizeof(account.holder_name));
-    account.holder_name[strcspn(account.holder_name, "\n")] = '\0';
+    fgets(buffer, sizeof(buffer), stdin);                              // get name of the account holder
+    strncpy(account.holder_name, buffer, sizeof(account.holder_name)); // copy string to account
+    account.holder_name[strcspn(account.holder_name, "\n")] = '\0';    // trim newline
 
     if (account.holder_name[0] == '\0')
     {

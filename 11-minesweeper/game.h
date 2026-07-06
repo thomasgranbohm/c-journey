@@ -20,6 +20,7 @@ typedef struct
 } Board;
 
 void reveal_tile(int x, int y);
+void place_flag(int x, int y);
 void setup_board();
 void setup_mines();
 

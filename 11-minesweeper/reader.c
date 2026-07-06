@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -39,7 +40,10 @@ void wFree(struct wbuf *wb)
 
 struct config
 {
+    int rows, cols;
     int cx, cy;
+    int ax, ay;
+
     struct termios orig;
 };
 
@@ -53,6 +57,9 @@ void die(const char *s)
 
 void disable_raw_mode()
 {
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
+
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig) == -1)
         die("tcsetattr");
 }
@@ -77,6 +84,34 @@ void enable_raw_mode()
         die("tcsetattr");
 }
 
+int get_window_size(int *rows, int *cols)
+{
+    struct winsize ws;
+
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
+    {
+        return -1;
+    }
+    else
+    {
+        *cols = ws.ws_col;
+        *rows = ws.ws_row;
+        return 0;
+    }
+}
+
+void init_terminal()
+{
+    if (get_window_size(&E.rows, &E.cols) == -1)
+        die("get_window_size");
+
+    E.ay = (E.rows - board->size) / 2;
+    E.ax = (E.cols - board->size) / 2;
+
+    E.cx = 0;
+    E.cy = 0;
+}
+
 char read_key()
 {
     int nread;
@@ -93,14 +128,20 @@ char read_key()
 
 void draw_map(struct wbuf *wb)
 {
+    char buf[32];
     for (int y = 0; y < board->size; y++)
     {
+        snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.ay + y, E.ax);
+        wAppend(wb, buf, strlen(buf));
         for (int x = 0; x < board->size; x++)
         {
             char c;
             int offset = x + y * board->size;
             switch (board->visited[offset])
             {
+            case FLAG:
+                c = '!';
+                break;
             case UNVISITED:
                 c = '#';
                 break;
@@ -114,9 +155,6 @@ void draw_map(struct wbuf *wb)
                     else
                         c = '.';
                     break;
-                case FLAG:
-                    c = '!';
-                    break;
                 case MINE:
                     c = 'O';
                     break;
@@ -125,7 +163,7 @@ void draw_map(struct wbuf *wb)
             }
             wAppend(wb, &c, 1);
         }
-        wAppend(wb, "\r\n", 2);
+        // wAppend(wb, "\x1b[H", 2);
     }
 }
 
@@ -138,10 +176,10 @@ void refresh_screen()
     draw_map(&wb);
 
     char buf[32];
-    snprintf(buf, sizeof(buf), "%d:%d", E.cx + 1, E.cy + 1);
-    wAppend(&wb, buf, strlen(buf));
+    // snprintf(buf, sizeof(buf), "%d:%d", E.cx + 1, E.cy + 1);
+    // wAppend(&wb, buf, strlen(buf));
 
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cy + 1, E.cx + 1);
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.ay + E.cy, E.ax + E.cx);
     wAppend(&wb, buf, strlen(buf));
 
     write(STDOUT_FILENO, wb.b, wb.len);
@@ -161,11 +199,11 @@ void move_cursor(char key)
             E.cx--;
         break;
     case 's':
-        if (E.cy != 64)
+        if (E.cy < board->size)
             E.cy++;
         break;
     case 'd':
-        if (E.cx != 64)
+        if (E.cx < board->size)
             E.cx++;
         break;
     }
@@ -184,16 +222,13 @@ void process_key()
         move_cursor(c);
         break;
     case ' ':
-        reveal_tile(E.cy, E.cx);
+        reveal_tile(E.cx, E.cy);
+        break;
+    case 'f':
+        place_flag(E.cx, E.cy);
         break;
     case 'q':
         exit(0);
         break;
     }
-}
-
-void init_terminal()
-{
-    E.cx = 0;
-    E.cy = 0;
 }
