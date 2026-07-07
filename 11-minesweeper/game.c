@@ -9,34 +9,52 @@
 #include "game.h"
 #include "stack.h"
 
-#define MIN_BOARD_SIZE 4
-#define MAX_BOARD_SIZE 32
-
-#define POINTER_OFFSET(x, y, s) x + (y * s)
+#define POINTER_OFFSET(x, y, s) (x + (y * s))
 
 extern Board *board;
 
-void setup_board()
+void free_board()
 {
-    char buffer[64];
-    int size = 32;
+    free(board->map);
+    free(board->visited);
+    free(board->dist);
+    free(board);
+}
 
-    do
+void setup_board(int size)
+{
+    board = malloc(sizeof(Board));
+    if (!board)
     {
-        printf("Please input board size: ");
-        fflush(stdout);
-        fgets(buffer, sizeof(buffer), stdin);
-        size = atoi(buffer);
-    } while (size < MIN_BOARD_SIZE || size > MAX_BOARD_SIZE);
+        perror("malloc board failed");
+        exit(1);
+    }
 
     char *map_pointer = malloc(size * size * sizeof(char));
     char *visited_pointer = malloc(size * size * sizeof(char));
     char *dist_pointer = malloc(size * size * sizeof(char));
 
+    if (!map_pointer)
+    {
+        perror("malloc map_pointer failed");
+        exit(1);
+    }
+    if (!visited_pointer)
+    {
+        perror("malloc visited_pointer failed");
+        exit(1);
+    }
+    if (!dist_pointer)
+    {
+        perror("malloc dist_pointer failed");
+        exit(1);
+    }
+
     board->size = size;
     board->map = map_pointer;
     board->visited = visited_pointer;
     board->dist = dist_pointer;
+    board->n_visited = 0;
 
     for (int y = 0; y < size; y++)
     {
@@ -50,20 +68,9 @@ void setup_board()
     }
 };
 
-void setup_mines()
+void setup_mines(int n_mines)
 {
-    char buffer[64];
-    int n_mines = 99;
     int size = board->size;
-
-    do
-    {
-        printf("Please input number of mines: ");
-        fflush(stdout);
-        fgets(buffer, sizeof(buffer), stdin);
-        n_mines = atoi(buffer);
-    } while (n_mines < 1 || n_mines > size);
-
     board->n_mines = n_mines;
 
     int *mines = malloc(sizeof(int) * 2 * n_mines);
@@ -115,20 +122,54 @@ void setup_mines()
     free(mines);
 }
 
+void setup_game(enum Difficulty diff)
+{
+    int size, n_mines;
+    switch (diff)
+    {
+    case EASY:
+        size = 9;
+        n_mines = 10;
+        break;
+    case MEDIUM:
+        size = 16;
+        n_mines = 40;
+        break;
+    case HARD:
+        size = 36;
+        n_mines = 99;
+        break;
+
+    default:
+        write(STDERR_FILENO, "Unknown difficulty\r\n", 20);
+        exit(1);
+        break;
+    }
+
+    setup_board(size);
+    setup_mines(n_mines);
+
+    atexit(free_board);
+}
+
 enum GameState reveal_tile(int x, int y)
 {
     int curr = POINTER_OFFSET(x, y, board->size);
 
+    if (x < 0 || x >= board->size || y < 0 || y >= board->size)
+        return PENDING;
+
+    if (board->visited[curr] == VISITED)
+        return PENDING;
+
     board->visited[curr] = VISITED;
 
     if (board->map[curr] == MINE)
-    {
         return LOSS;
-    }
+
     if (board->map[curr] != PLAIN)
-    {
         return PENDING;
-    }
+
     else if (board->dist[curr] != 0)
     {
         board->n_visited++;
@@ -138,7 +179,7 @@ enum GameState reveal_tile(int x, int y)
     Stack s = init_stack();
     push(&s, curr);
 
-    while (s.top != 0)
+    while (s.top != -1)
     {
         curr = pop(&s);
         x = curr % board->size;

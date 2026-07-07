@@ -105,7 +105,10 @@ void init_terminal()
 {
     if (get_window_size(&E.rows, &E.cols) == -1)
         die("get_window_size");
+}
 
+void init_game()
+{
     E.ay = (E.rows - board->size) / 2;
     E.ax = (E.cols - board->size) / 2;
 
@@ -131,13 +134,13 @@ void draw_map(struct wbuf *wb)
 {
     char buf[32];
     char c;
-    int dist;
     for (int y = 0; y < board->size; y++)
     {
         snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.ay + y, E.ax);
         wAppend(wb, buf, strlen(buf));
         for (int x = 0; x < board->size; x++)
         {
+            int dist = 0;
             int offset = x + y * board->size;
             switch (board->visited[offset])
             {
@@ -157,7 +160,7 @@ void draw_map(struct wbuf *wb)
                         snprintf(buf, sizeof(buf), "\x1b[1;34;%dm", 30 + dist);
                         wAppend(wb, buf, strlen(buf));
 
-                        c = dist + 48;
+                        c = '0' + dist;
                     }
                     else
                         c = '.';
@@ -167,6 +170,8 @@ void draw_map(struct wbuf *wb)
                     break;
                 }
                 break;
+            default:
+                die("draw_map");
             }
             wAppend(wb, &c, 1);
 
@@ -205,6 +210,8 @@ void draw_endgame(enum GameState status)
     wAppend(&wb, buf, strlen(buf));
     wAppend(&wb, "\x1b[2K", 4);
 
+    draw_map(&wb);
+
     if (status == WIN)
         draw_centered_string(&wb, "You win!", y);
 
@@ -212,6 +219,10 @@ void draw_endgame(enum GameState status)
         draw_centered_string(&wb, "You lose.", y);
 
     write(STDOUT_FILENO, wb.b, wb.len);
+    wFree(&wb);
+
+    free_board();
+
     exit(0);
 }
 
@@ -224,7 +235,6 @@ void draw_loss()
 {
     draw_endgame(LOSS);
 }
-
 void refresh_screen()
 {
     struct wbuf wb = WBUF_INIT;

@@ -1,17 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-typedef struct
-{
-    int max_size;
-    int top;
-    int *items;
-} Stack;
+#include "stack.h"
 
 Stack init_stack()
 {
     int max_size = 2;
-    int top = 0;
+    int top = -1;
     int *items = malloc(sizeof(int) * max_size);
 
     Stack stack = {max_size, top, items};
@@ -40,8 +35,8 @@ void push(Stack *stack, int item)
 
 int pop(Stack *stack)
 {
-    if (stack->top == 0)
-        return -1;
+    if (stack->top < 0)
+        return stack->top;
 
     int item = stack->items[stack->top];
 
