@@ -7,4 +7,7 @@ void init_terminal();
 void process_key();
 void refresh_screen();
 
+void draw_loss();
+void draw_win();
+
 #endif

@@ -1,13 +1,24 @@
 #ifndef GAME_H
 #define GAME_H
 
-enum
+#define DIFF_EASY {9, 10}
+#define DIFF_MEDIUM {16, 40}
+#define DIFF_HARD {36, 99}
+
+enum Tiles
 {
     UNVISITED,
     VISITED,
     PLAIN,
     MINE,
     FLAG
+};
+
+enum GameState
+{
+    PENDING,
+    WIN,
+    LOSS,
 };
 
 typedef struct
@@ -20,10 +31,10 @@ typedef struct
     char *dist;
 } Board;
 
-void reveal_tile(int x, int y);
+enum GameState reveal_tile(int x, int y);
 void place_flag(int x, int y);
 void setup_board();
 void setup_mines();
-void check_win();
+enum GameState check_win();
 
 #endif

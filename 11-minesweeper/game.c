@@ -115,7 +115,7 @@ void setup_mines()
     free(mines);
 }
 
-void reveal_tile(int x, int y)
+enum GameState reveal_tile(int x, int y)
 {
     int curr = POINTER_OFFSET(x, y, board->size);
 
@@ -123,18 +123,16 @@ void reveal_tile(int x, int y)
 
     if (board->map[curr] == MINE)
     {
-        write(STDOUT_FILENO, "You lose!\r\n", 11);
-        exit(0);
-        return;
+        return LOSS;
     }
     if (board->map[curr] != PLAIN)
     {
-        return;
+        return PENDING;
     }
     else if (board->dist[curr] != 0)
     {
         board->n_visited++;
-        return;
+        return PENDING;
     }
 
     Stack s = init_stack();
@@ -176,6 +174,8 @@ void reveal_tile(int x, int y)
     }
 
     free_stack(&s);
+
+    return PENDING;
 }
 
 void place_flag(int x, int y)
@@ -192,11 +192,11 @@ void place_flag(int x, int y)
     board->visited[offset] = output;
 }
 
-void check_win()
+enum GameState check_win()
 {
     if (board->n_visited == board->size * board->size - board->n_mines)
     {
-        write(STDOUT_FILENO, "You win!\r\n", 10);
-        exit(0);
+        return WIN;
     }
+    return PENDING;
 }

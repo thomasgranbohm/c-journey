@@ -9,6 +9,18 @@
 
 Board *board;
 
+void game_loop()
+{
+    while (1)
+    {
+        refresh_screen();
+        process_key();
+
+        if (check_win() == WIN)
+            draw_win();
+    }
+}
+
 int main(void)
 {
     srand(time(NULL));
@@ -21,11 +33,5 @@ int main(void)
     enable_raw_mode();
     init_terminal();
 
-    // Game loop kinda
-    while (1)
-    {
-        refresh_screen();
-        process_key();
-        check_win();
-    }
+    game_loop();
 }

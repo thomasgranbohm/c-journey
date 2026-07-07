@@ -57,8 +57,6 @@ void die(const char *s)
 
 void disable_raw_mode()
 {
-    // write(STDOUT_FILENO, "\x1b[2J", 4);
-
     char buf[32];
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.rows + 1, 0);
     write(STDOUT_FILENO, buf, strlen(buf));
@@ -132,13 +130,14 @@ char read_key()
 void draw_map(struct wbuf *wb)
 {
     char buf[32];
+    char c;
+    int dist;
     for (int y = 0; y < board->size; y++)
     {
         snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.ay + y, E.ax);
         wAppend(wb, buf, strlen(buf));
         for (int x = 0; x < board->size; x++)
         {
-            char c;
             int offset = x + y * board->size;
             switch (board->visited[offset])
             {
@@ -152,9 +151,14 @@ void draw_map(struct wbuf *wb)
                 switch (board->map[offset])
                 {
                 case PLAIN:
-                    int dist = board->dist[offset];
+                    dist = board->dist[offset];
                     if (dist != 0)
+                    {
+                        snprintf(buf, sizeof(buf), "\x1b[1;34;%dm", 30 + dist);
+                        wAppend(wb, buf, strlen(buf));
+
                         c = dist + 48;
+                    }
                     else
                         c = '.';
                     break;
@@ -165,8 +169,60 @@ void draw_map(struct wbuf *wb)
                 break;
             }
             wAppend(wb, &c, 1);
+
+            if (dist != 0)
+            {
+                strcpy(buf, "\x1b[0;34;39m");
+                wAppend(wb, buf, strlen(buf));
+            }
         }
     }
+}
+
+void draw_centered_string(struct wbuf *wb, char *s, int y)
+{
+    int x = (E.cols - strlen(s)) / 2;
+    char buf[32];
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", y, x);
+    wAppend(wb, buf, strlen(buf));
+    wAppend(wb, s, strlen(s));
+}
+
+void draw_information(struct wbuf *wb)
+{
+    draw_centered_string(wb, "Minesweeper", E.ay - 2);
+
+    draw_centered_string(wb, "(q) Quit    (w/a/s/d) Movement    (f) Toggle flag    (space) Reveal tile", E.ay + board->size + 2);
+}
+
+void draw_endgame(enum GameState status)
+{
+    struct wbuf wb = WBUF_INIT;
+
+    int y = E.ay + board->size + 2;
+    char buf[32];
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", y, 1);
+    wAppend(&wb, buf, strlen(buf));
+    wAppend(&wb, "\x1b[2K", 4);
+
+    if (status == WIN)
+        draw_centered_string(&wb, "You win!", y);
+
+    else if (status == LOSS)
+        draw_centered_string(&wb, "You lose.", y);
+
+    write(STDOUT_FILENO, wb.b, wb.len);
+    exit(0);
+}
+
+void draw_win()
+{
+    draw_endgame(WIN);
+}
+
+void draw_loss()
+{
+    draw_endgame(LOSS);
 }
 
 void refresh_screen()
@@ -175,11 +231,10 @@ void refresh_screen()
     wAppend(&wb, "\x1b[2J", 4);
     wAppend(&wb, "\x1b[H", 3);
 
+    draw_information(&wb);
     draw_map(&wb);
-    char buf[32];
-    snprintf(buf, sizeof(buf), "\r\nMissing %d tiles (%d)", board->n_visited, board->size * board->size - board->n_mines);
-    wAppend(&wb, buf, strlen(buf));
 
+    char buf[32];
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.ay + E.cy, E.ax + E.cx);
     wAppend(&wb, buf, strlen(buf));
 
@@ -200,11 +255,11 @@ void move_cursor(char key)
             E.cx--;
         break;
     case 's':
-        if (E.cy < board->size)
+        if (E.cy < board->size - 1)
             E.cy++;
         break;
     case 'd':
-        if (E.cx < board->size)
+        if (E.cx < board->size - 1)
             E.cx++;
         break;
     }
@@ -223,7 +278,12 @@ void process_key()
         move_cursor(c);
         break;
     case ' ':
-        reveal_tile(E.cx, E.cy);
+        enum GameState state = reveal_tile(E.cx, E.cy);
+        if (state == LOSS)
+        {
+            draw_loss();
+            return;
+        }
         break;
     case 'f':
         place_flag(E.cx, E.cy);
