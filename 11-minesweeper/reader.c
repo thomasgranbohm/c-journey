@@ -221,8 +221,6 @@ void draw_endgame(enum GameState status)
     write(STDOUT_FILENO, wb.b, wb.len);
     wFree(&wb);
 
-    free_board();
-
     exit(0);
 }
 

@@ -5,12 +5,9 @@ enum Difficulty
 {
     EASY = 1,
     MEDIUM = 2,
-    HARD = 3
+    HARD = 3,
+    IMPOSSIBLE = 4,
 };
-
-#define DIFF_EASY {9, 10}
-#define DIFF_MEDIUM {16, 40}
-#define DIFF_HARD {36, 99}
 
 enum Tiles
 {

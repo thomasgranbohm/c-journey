@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     srand(time(NULL));
 
     char buf[4];
-    int diff = EASY;
+    int diff = IMPOSSIBLE;
 
     if (argc <= 1 || argv[1] == NULL)
     {

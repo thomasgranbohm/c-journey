@@ -139,6 +139,10 @@ void setup_game(enum Difficulty diff)
         size = 36;
         n_mines = 99;
         break;
+    case IMPOSSIBLE:
+        size = 36;
+        n_mines = 36 * 36;
+        break;
 
     default:
         write(STDERR_FILENO, "Unknown difficulty\r\n", 20);
