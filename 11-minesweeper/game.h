@@ -40,7 +40,7 @@ void place_flag(int x, int y);
 void setup_board(int size);
 void setup_mines(int n_mines);
 void setup_game(enum Difficulty);
-enum GameState check_win();
+enum GameState check_state();
 
 void free_board();
 

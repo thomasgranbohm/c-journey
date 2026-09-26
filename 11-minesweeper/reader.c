@@ -1,3 +1,7 @@
+// Thank you btw, https://viewsourcecode.org/snaptoken/kilo/index.html
+// Other resources:
+// - https://vt100.net/docs/vt100-ug/chapter3.html
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -109,6 +113,7 @@ void init_terminal()
 
 void init_game()
 {
+    // Top left corner
     E.ay = (E.rows - board->size) / 2;
     E.ax = (E.cols - board->size) / 2;
 
@@ -136,6 +141,7 @@ void draw_map(struct wbuf *wb)
     char c;
     for (int y = 0; y < board->size; y++)
     {
+        // Center the window
         snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.ay + y, E.ax);
         wAppend(wb, buf, strlen(buf));
         for (int x = 0; x < board->size; x++)
@@ -157,6 +163,7 @@ void draw_map(struct wbuf *wb)
                     dist = board->dist[offset];
                     if (dist != 0)
                     {
+                        // Change color
                         snprintf(buf, sizeof(buf), "\x1b[1;34;%dm", 30 + dist);
                         wAppend(wb, buf, strlen(buf));
 
@@ -166,7 +173,7 @@ void draw_map(struct wbuf *wb)
                         c = '.';
                     break;
                 case MINE:
-                    c = 'O';
+                    c = '@';
                     break;
                 }
                 break;
@@ -177,11 +184,42 @@ void draw_map(struct wbuf *wb)
 
             if (dist != 0)
             {
+                // Reset color
                 strcpy(buf, "\x1b[0;34;39m");
                 wAppend(wb, buf, strlen(buf));
             }
         }
     }
+}
+
+void draw_mines_overlay(struct wbuf *wb)
+{
+    char buf[32];
+    char c;
+    wAppend(wb, "\x1b[1;5m", 6);
+
+    for (int y = 0; y < board->size; y++)
+    {
+        // Center the window
+        for (int x = 0; x < board->size; x++)
+        {
+            int dist = 0;
+            int offset = x + y * board->size;
+            if (board->map[offset] == MINE)
+            {
+                // wAppend(wb, "\x1b[2J", 4);
+                int _y = E.ay + y, _x = E.ax + x;
+                wAppend(wb, "\x1b[H", 3);
+                snprintf(buf, sizeof(buf), "\x1b[%d;%dH", _y, _x);
+                wAppend(wb, buf, strlen(buf));
+
+                c = '@';
+                wAppend(wb, &c, 1);
+            }
+        }
+    }
+
+    wAppend(wb, "\x1b[0m", 4);
 }
 
 void draw_centered_string(struct wbuf *wb, char *s, int y)
@@ -216,7 +254,10 @@ void draw_endgame(enum GameState status)
         draw_centered_string(&wb, "You win!", y);
 
     else if (status == LOSS)
+    {
         draw_centered_string(&wb, "You lose.", y);
+        draw_mines_overlay(&wb);
+    }
 
     write(STDOUT_FILENO, wb.b, wb.len);
     wFree(&wb);

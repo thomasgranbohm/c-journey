@@ -17,7 +17,7 @@ void game_loop()
         refresh_screen();
         process_key();
 
-        if (check_win() == WIN)
+        if (check_state() == WIN)
             draw_win();
     }
 }

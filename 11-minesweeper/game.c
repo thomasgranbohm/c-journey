@@ -141,7 +141,7 @@ void setup_game(enum Difficulty diff)
         break;
     case IMPOSSIBLE:
         size = 36;
-        n_mines = 36 * 36;
+        n_mines = 30 * 30;
         break;
 
     default:
@@ -237,7 +237,7 @@ void place_flag(int x, int y)
     board->visited[offset] = output;
 }
 
-enum GameState check_win()
+enum GameState check_state()
 {
     if (board->n_visited == board->size * board->size - board->n_mines)
     {
